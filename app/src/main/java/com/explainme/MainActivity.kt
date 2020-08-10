@@ -21,6 +21,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
@@ -84,26 +85,13 @@ class MainActivity : AppCompatActivity() {
                     val mHour = c.get(Calendar.HOUR)
                     val mMinute = c.get(Calendar.MINUTE)
                     TimePickerDialog(this,
-                        TimePickerDialog.OnTimeSetListener { p0, minute, hour -> //                            val date = GregorianCalendar(year, month, day, hour, minute)
-                            //                            val date = GregorianCalendar(Calendar.getInstance().timeZone)
-                            //                            date.set(year, month, day, hour, minute)
-                            //                            Log.i("ExplainMe", date.timeZone.displayName)
-                            //                            Log.i("ExplainMe", (date.timeInMillis / 1000).toString())
-                            //                            date.timeZone = TimeZone.getTimeZone("UTC")
-                            //                            Log.i("ExplainMe", date.timeZone.displayName)
-                            //                            Log.i("ExplainMe", (date.timeInMillis / 1000).toString())
-                            //                            val ldt = LocalDateTime.parse("$year-$month-${day}T$hour:$minute:00", ZoneI)
-                            //                            val date = Time()
-                            //                            date.set(0, minute, hour, day, month, year)
-                            //                            val tz = TimeZone.getTimeZone("Asia/Yekaterinburg")
-                            //                            val destFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                            //                            destFormat.timeZone = tz
-                            //                            dest
-                            //                            val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-                            //                            isoFormat.timeZone = TimeZone.getTimeZone("Asia/Yekaterinburg")
-                            //                            val date = isoFormat.parse("${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00")!!
-
-                            val time = System.currentTimeMillis() / 1000 + 1000
+                        TimePickerDialog.OnTimeSetListener { p0, minute, hour ->
+                            val cal = GregorianCalendar()
+                            cal.timeZone = TimeZone.getTimeZone("GMT")
+                            cal.timeZone = Calendar.getInstance().timeZone
+                            cal.set(year, month, day, hour, minute)
+                            Log.i("ExplainMe", (cal.timeInMillis / 1000).toString())
+                            val time = cal.timeInMillis / 1000
                             Log.i("ExplainMe", time.toString())
                             val title = title_field.text.toString()
                             val description = description_field.text.toString()
@@ -137,17 +125,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        // R.menu.mymenu is a reference to an xml file named mymenu.xml which should be inside your res/menu directory.
-        // If you don't have res/menu, just create a directory named "menu" inside res
         menuInflater.inflate(R.menu.mymenu, menu)
         return super.onCreateOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val id: Int = item.getItemId()
-        if (id == R.id.mybutton) {
-            signOut()
-        }
+        signOut()
         return super.onOptionsItemSelected(item)
     }
 
