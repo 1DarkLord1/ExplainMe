@@ -1,5 +1,8 @@
 import sys, os
 
+from servsrc import server
+
+
 def gen_path(paths):
     full_path = os.path.dirname(os.path.abspath(__file__))
     for path in paths:
@@ -8,11 +11,5 @@ def gen_path(paths):
 
 sys.path.append(gen_path(['servsrc']))
 
-import server
-
 if __name__ == '__main__':
-    logs =
-    if len(sys.argv) == 2:
-        server.run(port = int(sys.argv[1]))
-    else:
-        server.run()
+    server.run(8000)
