@@ -10,9 +10,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.cardview.widget.CardView
-import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.lecture_card.view.*
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -22,7 +22,8 @@ import java.net.URL
 import kotlin.concurrent.thread
 
 
-class LectureAdapter(private val lectures: ArrayList<Lecture>, private val context: Activity) :
+class LectureAdapter(private val lectures: ArrayList<Lecture>,
+                     private val context: Activity) :.
     RecyclerView.Adapter<LectureAdapter.LectureHolder>() {
 
     class LectureHolder(val cardView: CardView, var expanded: Boolean = false) : RecyclerView.ViewHolder(cardView)
@@ -33,7 +34,7 @@ class LectureAdapter(private val lectures: ArrayList<Lecture>, private val conte
             .inflate(R.layout.lecture_card, parent, false) as CardView
         val holder = LectureHolder(cardView)
         cardView.setOnClickListener {
-            TransitionManager.beginDelayedTransition(it as CardView)
+            TransitionManager.beginDelayedTransition(context.recycler_view)
             if (!holder.expanded) {
                 cardView.description.visibility = View.VISIBLE
                 cardView.time_left.visibility = View.VISIBLE
@@ -54,7 +55,7 @@ class LectureAdapter(private val lectures: ArrayList<Lecture>, private val conte
         val diff = (lectures[position].time - System.currentTimeMillis() / 1000) / 60
         val hour = diff / 60
         val minute = diff % 60
-        holder.cardView.time_left.text = "Starts in $hour:$minute"
+        holder.cardView.time_left.text = "Starts in %02d:%02d".format(hour, minute)
         holder.cardView.url.autoLinkMask = 0
         holder.cardView.url.isClickable = true
         holder.cardView.url.movementMethod = LinkMovementMethod.getInstance()
@@ -64,7 +65,7 @@ class LectureAdapter(private val lectures: ArrayList<Lecture>, private val conte
             context.startActivity(browserIntent)
         }
         thread{
-            val user = get_user(lectures[position].author)
+            val user = getUser(lectures[position].author)
             context.runOnUiThread {
                 holder.cardView.author_field.text = user.display_name
                 if (user.photo_url != "null") {
@@ -81,8 +82,8 @@ class LectureAdapter(private val lectures: ArrayList<Lecture>, private val conte
         notifyItemRangeInserted(itemCount - newLectures.size + 1, itemCount)
     }
 
-    private fun get_user(mail: String): User {
-        val url = URL("http://192.168.1.6:8000")
+    private fun getUser(mail: String): User {
+        val url = URL("http://$IP:8000")
         val con = url.openConnection() as HttpURLConnection
         con.requestMethod = "POST"
         con.setRequestProperty("Content-Type", "application/json; utf-8")
@@ -96,9 +97,7 @@ class LectureAdapter(private val lectures: ArrayList<Lecture>, private val conte
             os.write(input, 0, input.size)
         }
         var result: JSONObject? = null
-        BufferedReader(
-            InputStreamReader(con.inputStream, "utf-8")
-        ).use { br ->
+        BufferedReader(InputStreamReader(con.inputStream, "utf-8")).use { br ->
             val response = StringBuilder()
             var responseLine: String?
             while (br.readLine().also { responseLine = it } != null) {

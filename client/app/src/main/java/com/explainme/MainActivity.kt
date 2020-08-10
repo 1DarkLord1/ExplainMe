@@ -26,6 +26,8 @@ import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
 
 
+val IP = "192.168.0.104"
+
 class MainActivity : AppCompatActivity() {
     val LOADING_SIZE = 10
     var loading = true
@@ -33,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         fab.setOnClickListener { fab.isExpanded = !fab.isExpanded }
-//        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+//        supportActionBar!!.setDisplayHomeAsUpEx`nabled(true)
 //        supportActionBar!!.setDisplayShowHomeEnabled(true)
         val lm = LinearLayoutManager(this)
         val lectureAdapter = LectureAdapter(ArrayList(), this)
@@ -50,7 +52,7 @@ class MainActivity : AppCompatActivity() {
                     if (dy > 0 && !loading && visibleItemCount + pastVisibleItems >= totalItemCount) {
                         loading = true
                         thread {
-                            val lectures = load_lectures(totalItemCount, totalItemCount + LOADING_SIZE)
+                            val lectures = loadLectures(totalItemCount, totalItemCount + LOADING_SIZE)
                             runOnUiThread {
                                 lectureAdapter.addLectures(lectures)
                                 loading = false
@@ -62,7 +64,7 @@ class MainActivity : AppCompatActivity() {
             })
         }
         thread {
-            val lectures = load_lectures(0, LOADING_SIZE)
+            val lectures = loadLectures(0, LOADING_SIZE)
             runOnUiThread {
                 lectureAdapter.addLectures(lectures)
                 loading = false
@@ -84,26 +86,13 @@ class MainActivity : AppCompatActivity() {
                     val mHour = c.get(Calendar.HOUR)
                     val mMinute = c.get(Calendar.MINUTE)
                     TimePickerDialog(this,
-                        TimePickerDialog.OnTimeSetListener { p0, minute, hour -> //                            val date = GregorianCalendar(year, month, day, hour, minute)
-                            //                            val date = GregorianCalendar(Calendar.getInstance().timeZone)
-                            //                            date.set(year, month, day, hour, minute)
-                            //                            Log.i("ExplainMe", date.timeZone.displayName)
-                            //                            Log.i("ExplainMe", (date.timeInMillis / 1000).toString())
-                            //                            date.timeZone = TimeZone.getTimeZone("UTC")
-                            //                            Log.i("ExplainMe", date.timeZone.displayName)
-                            //                            Log.i("ExplainMe", (date.timeInMillis / 1000).toString())
-                            //                            val ldt = LocalDateTime.parse("$year-$month-${day}T$hour:$minute:00", ZoneI)
-                            //                            val date = Time()
-                            //                            date.set(0, minute, hour, day, month, year)
-                            //                            val tz = TimeZone.getTimeZone("Asia/Yekaterinburg")
-                            //                            val destFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                            //                            destFormat.timeZone = tz
-                            //                            dest
-                            //                            val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-                            //                            isoFormat.timeZone = TimeZone.getTimeZone("Asia/Yekaterinburg")
-                            //                            val date = isoFormat.parse("${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00")!!
-
-                            val time = System.currentTimeMillis() / 1000 + 1000
+                        TimePickerDialog.OnTimeSetListener { _, minute, hour ->
+                            val cal = GregorianCalendar()
+                            cal.timeZone = TimeZone.getTimeZone("GMT")
+                            cal.timeZone = Calendar.getInstance().timeZone
+                            cal.set(year, month, day, hour, minute)
+                            Log.i("ExplainMe", (cal.timeInMillis / 1000).toString())
+                            val time = cal.timeInMillis / 1000
                             Log.i("ExplainMe", time.toString())
                             val title = title_field.text.toString()
                             val description = description_field.text.toString()
@@ -118,7 +107,7 @@ class MainActivity : AppCompatActivity() {
                                     fab.isExpanded = false
                                 }
                             }
-                        }, mHour, mMinute, false).show()
+                        }, mHour, mMinute, true).show()
                 }, mYear, mMonth, mDay).show()
         }
     }
@@ -137,23 +126,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        // R.menu.mymenu is a reference to an xml file named mymenu.xml which should be inside your res/menu directory.
-        // If you don't have res/menu, just create a directory named "menu" inside res
         menuInflater.inflate(R.menu.mymenu, menu)
         return super.onCreateOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val id: Int = item.getItemId()
-        if (id == R.id.mybutton) {
-            signOut()
-        }
+        signOut()
         return super.onOptionsItemSelected(item)
     }
 
     private fun register_lecture(lecture: Lecture) {
         try {
-            val url = URL("http://192.168.1.6:8000")
+            val url = URL("http://$IP:8000")
             val con = url.openConnection() as HttpURLConnection
             con.requestMethod = "POST"
             con.setRequestProperty("Content-Type", "application/json; utf-8")
@@ -170,7 +154,6 @@ class MainActivity : AppCompatActivity() {
                 val input: ByteArray = jsonObject.toString().toByteArray()
                 os.write(input, 0, input.size)
             }
-            var jsonArray: JSONArray? = null
             BufferedReader(
                 InputStreamReader(con.inputStream, "utf-8")
             ).use { br ->
@@ -182,52 +165,59 @@ class MainActivity : AppCompatActivity() {
                 val str = response.toString()
                 Log.i("ExplainMe", str)
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
-    fun load_lectures(begin: Int, end: Int): Array<Lecture> {
-        val url = URL("http://192.168.1.6:8000")
-        val con = url.openConnection() as HttpURLConnection
-        con.requestMethod = "POST"
-        con.setRequestProperty("Content-Type", "application/json; utf-8")
-        con.setRequestProperty("Accept", "application/json")
-        con.doOutput = true
-        val jsonObject = JSONObject()
-        jsonObject.put("type", "get_lectures")
-        jsonObject.put("begin", begin)
-        jsonObject.put("end", end)
-        con.outputStream.use { os ->
-            val input: ByteArray = jsonObject.toString().toByteArray()
-            os.write(input, 0, input.size)
-        }
-        var jsonArray: JSONArray? = null
-        BufferedReader(
-            InputStreamReader(con.inputStream, "utf-8")
-        ).use { br ->
-            val response = StringBuilder()
-            var responseLine: String?
-            while (br.readLine().also { responseLine = it } != null) {
-                response.append(responseLine!!.trim { it <= ' ' })
+    fun loadLectures(begin: Int, end: Int): Array<Lecture> {
+        try {
+            val url = URL("http://$IP:8000")
+            val con = url.openConnection() as HttpURLConnection
+            con.requestMethod = "POST"
+            con.setRequestProperty("Content-Type", "application/json; utf-8")
+            con.setRequestProperty("Accept", "application/json")
+            con.doOutput = true
+            val jsonObject = JSONObject()
+            jsonObject.put("type", "get_lectures")
+            jsonObject.put("begin", begin)
+            jsonObject.put("end", end)
+            con.outputStream.use { os ->
+                val input: ByteArray = jsonObject.toString().toByteArray()
+                os.write(input, 0, input.size)
             }
-            val str = response.toString()
-            if (str[str.length - 1] != ']') {
-                Log.i("ExplainMe", "LOL:$str")
-                jsonArray = JSONArray("$str]")
-            } else {
-                Log.i("ExplainMe", str)
-                jsonArray = JSONArray(str)
+            var jsonArray: JSONArray? = null
+            BufferedReader(
+                InputStreamReader(con.inputStream, "utf-8")
+            ).use { br ->
+                val response = StringBuilder()
+                var responseLine: String?
+                while (br.readLine().also { responseLine = it } != null) {
+                    response.append(responseLine!!.trim { it <= ' ' })
+                }
+                val str = response.toString()
+                if (str[str.length - 1] != ']') {
+                    Log.i("ExplainMe", "LOL:$str")
+                    jsonArray = JSONArray("$str]")
+                } else {
+                    Log.i("ExplainMe", str)
+                    jsonArray = JSONArray(str)
+                }
             }
+            return (0 until jsonArray!!.length()).map {
+                val json = jsonArray!!.get(it) as JSONObject
+                Lecture(
+                    json.getString("title"),
+                    json.getString("description"),
+                    json.getString("author"),
+                    json.getInt("time"),
+                    json.getString("zoom_url")
+                )
+            }.toTypedArray()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return arrayOf()
         }
-        return (0 until jsonArray!!.length()).map {
-            val json = jsonArray!!.get(it) as JSONObject
-            Lecture(
-                json.getString("title"),
-                json.getString("description"),
-                json.getString("author"),
-                json.getInt("time"),
-                json.getString("zoom_url")
-            )
-        }.toTypedArray()
     }
 
     private fun signOut() {
@@ -237,9 +227,9 @@ class MainActivity : AppCompatActivity() {
                 .build()
         val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
         mGoogleSignInClient.signOut()
-            .addOnCompleteListener(this, OnCompleteListener<Void?> {
+            .addOnCompleteListener(this) {
                 finish()
-            })
+            }
     }
 
 }
