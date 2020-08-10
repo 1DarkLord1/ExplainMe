@@ -21,11 +21,12 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
 
+
+val IP = "192.168.0.104"
 
 class MainActivity : AppCompatActivity() {
     val LOADING_SIZE = 10
@@ -34,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         fab.setOnClickListener { fab.isExpanded = !fab.isExpanded }
-//        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+//        supportActionBar!!.setDisplayHomeAsUpEx`nabled(true)
 //        supportActionBar!!.setDisplayShowHomeEnabled(true)
         val lm = LinearLayoutManager(this)
         val lectureAdapter = LectureAdapter(ArrayList(), this)
@@ -51,7 +52,7 @@ class MainActivity : AppCompatActivity() {
                     if (dy > 0 && !loading && visibleItemCount + pastVisibleItems >= totalItemCount) {
                         loading = true
                         thread {
-                            val lectures = load_lectures(totalItemCount, totalItemCount + LOADING_SIZE)
+                            val lectures = loadLectures(totalItemCount, totalItemCount + LOADING_SIZE)
                             runOnUiThread {
                                 lectureAdapter.addLectures(lectures)
                                 loading = false
@@ -63,7 +64,7 @@ class MainActivity : AppCompatActivity() {
             })
         }
         thread {
-            val lectures = load_lectures(0, LOADING_SIZE)
+            val lectures = loadLectures(0, LOADING_SIZE)
             runOnUiThread {
                 lectureAdapter.addLectures(lectures)
                 loading = false
@@ -85,7 +86,7 @@ class MainActivity : AppCompatActivity() {
                     val mHour = c.get(Calendar.HOUR)
                     val mMinute = c.get(Calendar.MINUTE)
                     TimePickerDialog(this,
-                        TimePickerDialog.OnTimeSetListener { p0, minute, hour ->
+                        TimePickerDialog.OnTimeSetListener { _, minute, hour ->
                             val cal = GregorianCalendar()
                             cal.timeZone = TimeZone.getTimeZone("GMT")
                             cal.timeZone = Calendar.getInstance().timeZone
@@ -106,7 +107,7 @@ class MainActivity : AppCompatActivity() {
                                     fab.isExpanded = false
                                 }
                             }
-                        }, mHour, mMinute, false).show()
+                        }, mHour, mMinute, true).show()
                 }, mYear, mMonth, mDay).show()
         }
     }
@@ -136,7 +137,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun register_lecture(lecture: Lecture) {
         try {
-            val url = URL("http://192.168.1.6:8000")
+            val url = URL("http://$IP:8000")
             val con = url.openConnection() as HttpURLConnection
             con.requestMethod = "POST"
             con.setRequestProperty("Content-Type", "application/json; utf-8")
@@ -153,7 +154,6 @@ class MainActivity : AppCompatActivity() {
                 val input: ByteArray = jsonObject.toString().toByteArray()
                 os.write(input, 0, input.size)
             }
-            var jsonArray: JSONArray? = null
             BufferedReader(
                 InputStreamReader(con.inputStream, "utf-8")
             ).use { br ->
@@ -165,52 +165,59 @@ class MainActivity : AppCompatActivity() {
                 val str = response.toString()
                 Log.i("ExplainMe", str)
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
-    fun load_lectures(begin: Int, end: Int): Array<Lecture> {
-        val url = URL("http://192.168.1.6:8000")
-        val con = url.openConnection() as HttpURLConnection
-        con.requestMethod = "POST"
-        con.setRequestProperty("Content-Type", "application/json; utf-8")
-        con.setRequestProperty("Accept", "application/json")
-        con.doOutput = true
-        val jsonObject = JSONObject()
-        jsonObject.put("type", "get_lectures")
-        jsonObject.put("begin", begin)
-        jsonObject.put("end", end)
-        con.outputStream.use { os ->
-            val input: ByteArray = jsonObject.toString().toByteArray()
-            os.write(input, 0, input.size)
-        }
-        var jsonArray: JSONArray? = null
-        BufferedReader(
-            InputStreamReader(con.inputStream, "utf-8")
-        ).use { br ->
-            val response = StringBuilder()
-            var responseLine: String?
-            while (br.readLine().also { responseLine = it } != null) {
-                response.append(responseLine!!.trim { it <= ' ' })
+    fun loadLectures(begin: Int, end: Int): Array<Lecture> {
+        try {
+            val url = URL("http://$IP:8000")
+            val con = url.openConnection() as HttpURLConnection
+            con.requestMethod = "POST"
+            con.setRequestProperty("Content-Type", "application/json; utf-8")
+            con.setRequestProperty("Accept", "application/json")
+            con.doOutput = true
+            val jsonObject = JSONObject()
+            jsonObject.put("type", "get_lectures")
+            jsonObject.put("begin", begin)
+            jsonObject.put("end", end)
+            con.outputStream.use { os ->
+                val input: ByteArray = jsonObject.toString().toByteArray()
+                os.write(input, 0, input.size)
             }
-            val str = response.toString()
-            if (str[str.length - 1] != ']') {
-                Log.i("ExplainMe", "LOL:$str")
-                jsonArray = JSONArray("$str]")
-            } else {
-                Log.i("ExplainMe", str)
-                jsonArray = JSONArray(str)
+            var jsonArray: JSONArray? = null
+            BufferedReader(
+                InputStreamReader(con.inputStream, "utf-8")
+            ).use { br ->
+                val response = StringBuilder()
+                var responseLine: String?
+                while (br.readLine().also { responseLine = it } != null) {
+                    response.append(responseLine!!.trim { it <= ' ' })
+                }
+                val str = response.toString()
+                if (str[str.length - 1] != ']') {
+                    Log.i("ExplainMe", "LOL:$str")
+                    jsonArray = JSONArray("$str]")
+                } else {
+                    Log.i("ExplainMe", str)
+                    jsonArray = JSONArray(str)
+                }
             }
+            return (0 until jsonArray!!.length()).map {
+                val json = jsonArray!!.get(it) as JSONObject
+                Lecture(
+                    json.getString("title"),
+                    json.getString("description"),
+                    json.getString("author"),
+                    json.getInt("time"),
+                    json.getString("zoom_url")
+                )
+            }.toTypedArray()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return arrayOf()
         }
-        return (0 until jsonArray!!.length()).map {
-            val json = jsonArray!!.get(it) as JSONObject
-            Lecture(
-                json.getString("title"),
-                json.getString("description"),
-                json.getString("author"),
-                json.getInt("time"),
-                json.getString("zoom_url")
-            )
-        }.toTypedArray()
     }
 
     private fun signOut() {
@@ -220,9 +227,9 @@ class MainActivity : AppCompatActivity() {
                 .build()
         val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
         mGoogleSignInClient.signOut()
-            .addOnCompleteListener(this, OnCompleteListener<Void?> {
+            .addOnCompleteListener(this) {
                 finish()
-            })
+            }
     }
 
 }

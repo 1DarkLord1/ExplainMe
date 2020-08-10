@@ -44,7 +44,6 @@ class LoginActivity : AppCompatActivity() {
             super.onActivityResult(requestCode, resultCode, data)
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             val account = task.getResult(ApiException::class.java)!!
-            val id = account.id
             val photoUrl = account.photoUrl.toString()
             val email = account.email
             val displayName = account.displayName
@@ -67,7 +66,7 @@ class LoginActivity : AppCompatActivity() {
         }
     }
     private fun registerUser(user: JSONObject) {
-        val url = URL("http://192.168.1.6:8000")
+        val url = URL("http://$IP:8000")
         val con = url.openConnection() as HttpURLConnection
         con.requestMethod = "POST"
         con.setRequestProperty("Content-Type", "application/json; utf-8")
