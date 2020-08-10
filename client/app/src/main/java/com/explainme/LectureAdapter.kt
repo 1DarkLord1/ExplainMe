@@ -23,7 +23,7 @@ import kotlin.concurrent.thread
 
 
 class LectureAdapter(private val lectures: ArrayList<Lecture>,
-                     private val context: Activity) :.
+                     private val context: Activity) :
     RecyclerView.Adapter<LectureAdapter.LectureHolder>() {
 
     class LectureHolder(val cardView: CardView, var expanded: Boolean = false) : RecyclerView.ViewHolder(cardView)

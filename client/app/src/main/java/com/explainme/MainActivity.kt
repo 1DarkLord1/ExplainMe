@@ -2,6 +2,7 @@ package com.explainme
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Bundle
+import android.transition.TransitionManager
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -11,7 +12,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main.view.*
@@ -35,10 +35,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         fab.setOnClickListener { fab.isExpanded = !fab.isExpanded }
+        setSupportActionBar(toolbar)
 //        supportActionBar!!.setDisplayHomeAsUpEx`nabled(true)
 //        supportActionBar!!.setDisplayShowHomeEnabled(true)
         val lm = LinearLayoutManager(this)
         val lectureAdapter = LectureAdapter(ArrayList(), this)
+        val fab = fab
         recycler_view.apply {
             setHasFixedSize(false)
             layoutManager = lm
@@ -60,6 +62,13 @@ class MainActivity : AppCompatActivity() {
                         }
                         Log.i("ExplainMe", "Loading...")
                     }
+                    if (dy > 0) {
+                        fab.hide()
+
+                        fab.isExpanded = false
+                    } else {
+                        fab.show()
+                    }
                 }
             })
         }
@@ -73,7 +82,7 @@ class MainActivity : AppCompatActivity() {
         create_lecture_button.setOnClickListener {
             val title_field = sheet.title_field
             Log.i("ExplainMe", title_field.text.toString())
-            if (title_field.text.toString().isEmpty() || description_field.text.toString().isEmpty()) {
+            if (title_field.text.toString().isEmpty()) {
                 Snackbar.make(recycler_view, "Please fill title field", Snackbar.LENGTH_LONG).show()
                 return@setOnClickListener
             }
