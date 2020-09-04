@@ -9,9 +9,8 @@
   * [Technologies we used](#technologies-we-used)
 * [Getting Started](#getting-started)
   * [How to use the application](#how-to-use-the-application)
-* [For developers](#for-developers)
-  * [How to run the server](#how-to-run-the-server)
-  * [How to build the client](#how-to-build-the-client)
+  * [Running the server](#running-the-server)
+  * [Building the client](#building-the-client)
 * [Installation](#installation)
  * [Server installation](#server-installation)
 * [Contributors](#contributors)
@@ -38,14 +37,12 @@ Imagine a situation when someone wants to organize a lecture in Zoom. Firstly, h
 #### How to use the application
 Watch the [video](https://www.youtube.com/watch?v=XPYg8uUqhok)
 
-### For developers
-#### How to run the server
+#### Running the server
 1. Open a "server" folder
 2. Run command ```python3 main.py jwt_token```, where ```jwt_token``` is the JWT-token for your application registered in Zoom
 
-#### How to build the client
+#### Building the client
 TODO
-
 
 ### Installation
 #### Server installation
